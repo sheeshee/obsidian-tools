@@ -10,3 +10,24 @@ dependencies = []
 dev = [
     "pytest>=8.4.1",
 ]
+
+[tool.ruff]
+line-length = 88
+indent-width = 4
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.ruff.lint]
+select = [
+    "E",  # All pycodestyle error codes
+    "F",  # All pyflakes error codes
+    "I",  # All isort error codes
+    "N",  # All naming convention error codes
+    "RUF",  # All ruff error codes
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
