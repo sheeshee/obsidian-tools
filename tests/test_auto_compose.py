@@ -1,7 +1,7 @@
 import pytest
-
-from main import BlockExtractor, main
 from click.testing import CliRunner
+
+from auto_compose import BlockExtractor, main
 
 
 @pytest.mark.parametrize(
