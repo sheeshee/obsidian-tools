@@ -31,3 +31,25 @@ def test_main():
 
         assert result.exit_code == 0
         assert "Found 2 ideas" in result.output
+
+
+def test_main_with_logging():
+    runner = CliRunner()
+    with runner.isolated_filesystem():
+        with open("test.md", "w") as f:
+            f.write("* IDEA: first\n* IDEA: second")
+
+        result = runner.invoke(
+            main, ["-i", "IDEA:", "-l", "DEBUG", "-f", "test.log", "test.md", "."]
+        )
+
+        assert result.exit_code == 0
+        assert "Found 2 ideas" in result.output
+
+        with open("test.log", "r") as log_file:
+            log_content = log_file.read()
+            assert "Processing file: test.md" in log_content
+            assert "File content length: 28 characters" in log_content
+            assert "Raw matches found: 2" in log_content
+            assert "Match 1: first" in log_content
+            assert "Match 2: second" in log_content
