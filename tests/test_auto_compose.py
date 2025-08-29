@@ -12,11 +12,11 @@ from auto_compose import BlockExtractor, main
         ("no match", []),
         ("* IDEA: bullet", ["bullet"]),
         ("some text\n* IDEA: bullet", ["bullet"]),
-        ("* IDEA: first\n* IDEA: second", ["first", "second"])
-    ]
+        ("* IDEA: first\n* IDEA: second", ["first", "second"]),
+    ],
 )
 def test_get_matches(input, expected):
-    matches = BlockExtractor('', 'IDEA:').get_matches(input)
+    matches = BlockExtractor("", "IDEA:").get_matches(input)
 
     assert matches == expected
 
