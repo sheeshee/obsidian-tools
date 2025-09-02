@@ -81,6 +81,12 @@ class BlockExtractor:
         self.logger.debug("Linkified text: %s -> %s", text, link)
         return link
 
+    def update_content(self, content: str, matches: list, replacements: list) -> str:
+        for match, replacement in zip(matches, replacements):
+            self.logger.debug("Replacing pattern: %s with %s", match, replacement)
+            content = re.sub(match, replacement, content, flags=re.MULTILINE)
+        return content
+
     def extract_from_file(self, filepath) -> None:
         self.logger.debug("Processing file: %s", filepath)
 

@@ -32,6 +32,53 @@ def test_text_to_link(text, path, expected):
     assert linkified == expected
 
 
+@pytest.mark.parametrize(
+    "original,match,replacement,expected",
+    [
+        (
+            "This is a test.\n* IDEA: first idea\nSome more text",
+            ["first idea"],
+            ["[[path/to/first|first idea]]"],
+            "This is a test.\n* IDEA: [[path/to/first|first idea]]\nSome more text",
+        ),
+        (
+            "* IDEA: first idea\n* IDEA: second idea",
+            ["first idea", "second idea"],
+            ["[[path/to/first|first idea]]", "[[path/to/second|second idea]]"],
+            (
+                "* IDEA: [[path/to/first|first idea]]\n"
+                "* IDEA: [[path/to/second|second idea]]"
+            ),
+        ),
+        (
+            "No matches here.",
+            [],
+            [],
+            "No matches here.",
+        ),
+        (
+            "* IDEA: nested IDEA: example",
+            ["nested IDEA: example"],
+            ["[[path/to/nested|nested IDEA: example]]"],
+            "* IDEA: [[path/to/nested|nested IDEA: example]]",
+        ),
+        (
+            "IDEA: duplicate idea\nIDEA: duplicate idea",
+            ["duplicate idea", "duplicate idea"],
+            ["[[path/to/dup|duplicate idea]]", "[[path/to/dup|duplicate idea]]"],
+            (
+                "IDEA: [[path/to/dup|duplicate idea]]\n"
+                "IDEA: [[path/to/dup|duplicate idea]]"
+            ),
+        ),
+    ],
+)
+def test_update_content(original, match, replacement, expected):
+    exractor = BlockExtractor("", "")
+    updated = exractor.update_content(original, match, replacement)
+    assert updated == expected
+
+
 def test_main():
     runner = CliRunner()
     with runner.isolated_filesystem():
