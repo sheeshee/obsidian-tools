@@ -75,6 +75,12 @@ class BlockExtractor:
             )
         return matches
 
+    def text_to_link(self, text: str, path: Path | str) -> str:
+        path = self.ensure_is_path(path)
+        link = f"[[{path.as_posix()}|{text}]]"
+        self.logger.debug("Linkified text: %s -> %s", text, link)
+        return link
+
     def extract_from_file(self, filepath) -> None:
         self.logger.debug("Processing file: %s", filepath)
 

@@ -17,8 +17,19 @@ from auto_compose import BlockExtractor, main
 )
 def test_get_matches(input, expected):
     matches = BlockExtractor("", "IDEA:").get_matches(input)
-
     assert matches == expected
+
+
+@pytest.mark.parametrize(
+    "text,path,expected",
+    [
+        ("some text", "some/path", "[[some/path|some text]]"),
+        ("more text", "another/path", "[[another/path|more text]]"),
+    ],
+)
+def test_text_to_link(text, path, expected):
+    linkified = BlockExtractor("", "").text_to_link(text, path)
+    assert linkified == expected
 
 
 def test_main():
