@@ -110,6 +110,20 @@ class BlockExtractor:
         self.logger.info("Found %i ideas", len(matches))
         print(f"Found {len(matches)} ideas")
 
+        new_content = self.update_content(
+            content,
+            [m.text for m in matches],
+            [
+                self.text_to_link(m.text, Path(self.output_dir) / f"idea_{i + 1}.md")
+                for i, m in enumerate(matches)
+            ],
+            [m.text_span for m in matches],
+        )
+
+        with open(filepath, "w") as file:
+            file.write(new_content)
+            self.logger.debug("Updated file written: %s", filepath)
+
 
 @click.command()
 @click.option("--indicator", "-i", help="indicator to look for")
