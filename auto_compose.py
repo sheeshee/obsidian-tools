@@ -3,6 +3,7 @@ import os
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Iterable
 
 import click
 
@@ -39,24 +40,31 @@ class BlockExtractor:
     logger: logging.Logger = field(default_factory=_make_default_logger)
     _indicator_base = r"^\*?\s*(%s\s*)(.*?)(?=\n|$)"
 
+    @dataclass
+    class Block:
+        text: str
+        text_span: tuple[int, int]
+        full_block: str
+        full_block_span: tuple[int, int]
+
     def get_indicator(self) -> str:
         return self._indicator_base % self.indicator
 
     def ensure_is_path(self, filepath: Path | str) -> Path:
         return Path(filepath)
 
-    def get_matches(self, content: str) -> list:
+    def iter_matches(self, content: str) -> Iterable[Block]:
         self.logger.debug("Searching for pattern: %s", self.get_indicator())
-
-        match_groups = re.findall(self.get_indicator(), content, flags=re.MULTILINE)
-
-        self.logger.debug("Raw matches found: %i", len(match_groups))
-        matches = [match[1] for match in match_groups]
-        for i, match in enumerate(matches):
+        match_groups = re.finditer(self.get_indicator(), content, flags=re.MULTILINE)
+        for i, match in enumerate(match_groups):
             self.logger.debug(
-                "Match %i: %s", i + 1, match[:50] + ("..." if len(match) > 50 else "")
+                "Match %i: %s",
+                i + 1,
+                match.group(2)[:50] + ("..." if len(match.group(2)) > 50 else ""),
             )
-        return matches
+            yield self.Block(
+                match.group(2), match.span(2), match.group(0), match.span(0)
+            )
 
     def text_to_link(self, text: str, path: Path | str) -> str:
         path = self.ensure_is_path(path)
@@ -64,11 +72,32 @@ class BlockExtractor:
         self.logger.debug("Linkified text: %s -> %s", text, link)
         return link
 
-    def update_content(self, content: str, matches: list, replacements: list) -> str:
-        for match, replacement in zip(matches, replacements):
-            self.logger.debug("Replacing pattern: %s with %s", match, replacement)
-            content = re.sub(match, replacement, content, flags=re.MULTILINE)
-        return content
+    def update_content(
+        self,
+        content: str,
+        matches: list[str],
+        replacements: list[str],
+        spans: list[tuple[int, int]],
+    ) -> str:
+        new_content = []
+        previous_end = 0
+        iterator = zip(matches, replacements, spans)
+
+        for i, (match, replacement, span) in enumerate(iterator):
+            pre = content[previous_end : span[0]]
+            previous_end = span[1]
+            new_content.extend([pre, replacement])
+            self.logger.debug(
+                "(%i) Replacing '%s' with '%s'",
+                i,
+                content[span[0] : span[1]],
+                replacement,
+            )
+            assert content[span[0] : span[1]] == match, (
+                "Span does not match the expected text"
+            )
+        new_content.append(content[previous_end:])
+        return "".join(new_content)
 
     def extract_from_file(self, filepath) -> None:
         self.logger.debug("Processing file: %s", filepath)
@@ -76,7 +105,7 @@ class BlockExtractor:
         with open(filepath, "r") as file:
             content = file.read()
             self.logger.debug("File content length: %s characters", len(content))
-            matches = self.get_matches(content)
+            matches = list(self.iter_matches(content))
 
         self.logger.info("Found %i ideas", len(matches))
         print(f"Found {len(matches)} ideas")
