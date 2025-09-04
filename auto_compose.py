@@ -7,29 +7,13 @@ from pathlib import Path
 import click
 
 
-class SilentLogger(logging.Logger):
-    def __init__(self):
-        super().__init__(name="silent_logger")
-
-    def debug(self, *args, **kwargs):
-        pass
-
-    def info(self, *args, **kwargs):
-        pass
-
-    def warning(self, *args, **kwargs):
-        pass
-
-    def error(self, *args, **kwargs):
-        pass
-
-    def critical(self, *args, **kwargs):
-        pass
+def _make_default_logger():
+    return logging.getLogger(os.path.basename(__file__))
 
 
 def make_logger(log_level, log_file):
     # Configure logging
-    logger = logging.getLogger(os.path.basename(__file__))
+    logger = _make_default_logger()
     logger.setLevel(getattr(logging, log_level.upper()))
 
     # Create formatter
@@ -52,8 +36,7 @@ def make_logger(log_level, log_file):
 class BlockExtractor:
     output_dir: Path | str
     indicator: str
-    logger: logging.Logger = field(default_factory=SilentLogger)
-
+    logger: logging.Logger = field(default_factory=_make_default_logger)
     _indicator_base = r"^\*?\s*(%s\s*)(.*?)(?=\n|$)"
 
     def get_indicator(self) -> str:
