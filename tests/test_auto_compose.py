@@ -97,7 +97,6 @@ def test_main():
         result = runner.invoke(main, ["-i", "IDEA:", "test.md", "."])
 
         assert result.exit_code == 0
-        assert "Found 2 ideas" in result.output
 
 
 def test_main_with_logging():
@@ -111,7 +110,6 @@ def test_main_with_logging():
         )
 
         assert result.exit_code == 0
-        assert "Found 2 ideas" in result.output
 
         with open("test.log", "r") as log_file:
             log_content = log_file.read()

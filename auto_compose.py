@@ -107,9 +107,6 @@ class BlockExtractor:
             self.logger.debug("File content length: %s characters", len(content))
             matches = list(self.iter_matches(content))
 
-        self.logger.info("Found %i ideas", len(matches))
-        print(f"Found {len(matches)} ideas")
-
         new_content = self.update_content(
             content,
             [m.text for m in matches],
