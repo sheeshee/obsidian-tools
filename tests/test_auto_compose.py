@@ -13,6 +13,9 @@ from auto_compose import BlockExtractor, main
         ("* IDEA: bullet", ["bullet"], [(8, 14)]),
         ("some text\n* IDEA: bullet", ["bullet"], [(18, 24)]),
         ("* IDEA: first\n* IDEA: second", ["first", "second"], [(8, 13), (22, 28)]),
+        ("IDEA: [[some/path|some text]]", [], []),
+        ("* IDEA: [[some/path|some text]] with following text", [], []),
+        ("some text\n* IDEA: [[some/path|some text]]", [], []),
     ],
 )
 def test_iter_matches(input, expected_matches, expected_spans):

@@ -38,7 +38,7 @@ class BlockExtractor:
     output_dir: Path | str
     indicator: str
     logger: logging.Logger = field(default_factory=_make_default_logger)
-    _indicator_base = r"^\*?\s*(%s\s*)(.*?)(?=\n|$)"
+    _indicator_base = r"^\*?\s*(%s\s*)(?!\s*\[\[)(.*?)(?=\n|$)"
 
     @dataclass
     class Block:
