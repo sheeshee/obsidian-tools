@@ -11,6 +11,8 @@ from auto_compose import BlockExtractor, main
         ("IDEA: with IDEA: nested", ["with IDEA: nested"], [(6, 23)]),
         ("no match", [], []),
         ("* IDEA: bullet", ["bullet"], [(8, 14)]),
+        ("- IDEA: dash", ["dash"], [(8, 12)]),
+        ("    - IDEA: indented", ["indented"], [(12, 20)]),
         ("some text\n* IDEA: bullet", ["bullet"], [(18, 24)]),
         ("* IDEA: first\n* IDEA: second", ["first", "second"], [(8, 13), (22, 28)]),
         ("IDEA: [[some/path|some text]]", [], []),
