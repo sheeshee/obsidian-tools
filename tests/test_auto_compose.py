@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from click.testing import CliRunner
 
@@ -21,7 +23,7 @@ from auto_compose import BlockExtractor, main
     ],
 )
 def test_iter_matches(input, expected_matches, expected_spans):
-    matches = list(BlockExtractor("", "IDEA:").iter_matches(input))
+    matches = list(BlockExtractor(Path(""), Path(""), "IDEA:").iter_matches(input))
     assert [m.text for m in matches] == expected_matches
     assert [m.text_span for m in matches] == expected_spans
 
@@ -29,13 +31,13 @@ def test_iter_matches(input, expected_matches, expected_spans):
 @pytest.mark.parametrize(
     "text,path,expected",
     [
-        ("some text", "some/path", "[[some/path|some text]]"),
-        ("more text", "another/path", "[[another/path|more text]]"),
+        ("some text", "some/path", "[[some/path/Untitled Idea 0|some text]]"),
+        ("more text", "another/path", "[[another/path/Untitled Idea 0|more text]]"),
     ],
 )
-def test_text_to_link(text, path, expected):
-    linkified = BlockExtractor("", "").text_to_link(text, path)
-    assert linkified == expected
+def test_text_to_link(tmp_path, text, path, expected):
+    link = BlockExtractor(Path(""), tmp_path / path, "").text_to_link(text)
+    assert link.hyperlink == expected.replace(path, str(tmp_path / path))
 
 
 @pytest.mark.parametrize(
@@ -85,7 +87,7 @@ def test_text_to_link(text, path, expected):
     ],
 )
 def test_update_content(original, match, replacement, span, expected):
-    exractor = BlockExtractor("", "")
+    exractor = BlockExtractor(Path(""), Path(""), "")
     updated = exractor.update_content(original, match, replacement, span)
     assert updated == expected
 
@@ -96,7 +98,7 @@ def test_main():
         with open("test.md", "w") as f:
             f.write("* IDEA: first\n* IDEA: second")
 
-        result = runner.invoke(main, ["-i", "IDEA:", "test.md", "."])
+        result = runner.invoke(main, ["-i", "IDEA:", "test.md", "", "."])
 
         assert result.exit_code == 0
 
@@ -108,7 +110,7 @@ def test_main_with_logging():
             f.write("* IDEA: first\n* IDEA: second")
 
         result = runner.invoke(
-            main, ["-i", "IDEA:", "-l", "DEBUG", "-f", "test.log", "test.md", "."]
+            main, ["-i", "IDEA:", "-l", "DEBUG", "-f", "test.log", "test.md", "", "."]
         )
 
         assert result.exit_code == 0

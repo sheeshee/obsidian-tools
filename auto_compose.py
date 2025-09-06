@@ -35,7 +35,8 @@ def make_logger(log_level, log_file):
 
 @dataclass
 class BlockExtractor:
-    output_dir: Path | str
+    vault_dir: Path
+    output_dir: Path
     indicator: str
     logger: logging.Logger = field(default_factory=_make_default_logger)
     _indicator_base = r"^\s*[\*\-]?\s*(%s\s*)(?!\s*\[\[)(.*?)(?=\n|$)"
@@ -66,11 +67,20 @@ class BlockExtractor:
                 match.group(2), match.span(2), match.group(0), match.span(0)
             )
 
-    def text_to_link(self, text: str, path: Path | str) -> str:
-        path = self.ensure_is_path(path)
+    @dataclass
+    class Link:
+        hyperlink: str
+        obsidian_path: Path
+        filepath: str
+
+    def text_to_link(self, text: str) -> Link:
+        assert isinstance(self.vault_dir, Path), "vault_dir must be a Path"
+        file_count = sum(1 for _ in (self.vault_dir / self.output_dir).glob("*.md"))
+        path = self.output_dir / f"Untitled Idea {file_count}"
         link = f"[[{path.as_posix()}|{text}]]"
         self.logger.debug("Linkified text: %s -> %s", text, link)
-        return link
+        filepath = (self.vault_dir / path).as_posix() + ".md"
+        return self.Link(link, path, filepath)
 
     def update_content(
         self,
@@ -107,19 +117,27 @@ class BlockExtractor:
             self.logger.debug("File content length: %s characters", len(content))
             matches = list(self.iter_matches(content))
 
+        links = [self.text_to_link(m.text) for m in matches]
+
         new_content = self.update_content(
             content,
             [m.text for m in matches],
-            [
-                self.text_to_link(m.text, Path(self.output_dir) / f"idea_{i + 1}.md")
-                for i, m in enumerate(matches)
-            ],
+            [obj.hyperlink for obj in links],
             [m.text_span for m in matches],
         )
+
+        if content == new_content:
+            self.logger.debug("No new text to process")
+            return
 
         with open(filepath, "w") as file:
             file.write(new_content)
             self.logger.debug("Updated file written: %s", filepath)
+
+        for link, match in zip(links, matches):
+            with open(link.filepath, "w+") as file:
+                file.write(match.text)
+                self.logger.debug("Created new file: %s", link.filepath)
 
 
 @click.command()
@@ -143,14 +161,21 @@ class BlockExtractor:
     "input_filepath", type=click.Path(exists=True, dir_okay=False, writable=True)
 )
 @click.argument("output_dir", type=click.Path())
-def main(input_filepath, output_dir, indicator, log_level, log_file) -> None:
+@click.argument("vault_dir", type=click.Path())
+def main(input_filepath, output_dir, vault_dir, indicator, log_level, log_file) -> None:
     logger = make_logger(log_level, log_file)
     logger.debug("Starting auto_compose with indicator: %s", indicator)
     logger.debug("Input file: %s", input_filepath)
     logger.debug("Output directory: %s", output_dir)
+    logger.debug("Vault directory: %s", vault_dir)
 
-    extractor = BlockExtractor(output_dir, indicator, logger)
-    extractor.extract_from_file(input_filepath)
+    extractor = BlockExtractor(Path(vault_dir), Path(output_dir), indicator, logger)
+    try:
+        extractor.extract_from_file(input_filepath)
+    except Exception as e:
+        logger.critical("An error occurred: %s", e)
+        logger.exception(e)
+        raise e
 
 
 if __name__ == "__main__":
